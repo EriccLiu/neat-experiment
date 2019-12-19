@@ -1,0 +1,37 @@
+1 compute host fits 28x128MB VMs.
+
+Purpose of experiments:
+     1. show that the system works
+     2. show the performance of the system - execution time
+     3. show how different algorithms perform
+
+What data to report:
+     1. The total idle time
+     2. OTF
+     3. The number of VM migrations
+     4. The execution time of different components
+
+What experiments to run:
+     1. One set of data, a single run?
+     2. Algorithms
+     	1. VM placement: BFD
+		2. VM selection: min RAM / max CPU
+		3. Underload detection: last n average 2
+		4. Overload detection: MHOD 0.1-0.2?; last n average 2; LR/LRR 1.0
+
+Output format for metrics - CSV (coma-separated, missing values: NaN):
+
+Algorithm name + parameters | Algorithm name | Parameters | 
+Idle time | OTF | VM migrations
+
+
+
+Output format for execution time - CSV (coma-separated, missing values: NaN):
+
+Algorithm name + parameters | Algorithm name | Parameters | 
+DC iteration | DC VM data collection | DC host data collection |
+LM iteration | LM skipped iteration | LM underload | LM overload | LM VM selection |
+GM underload | GM skipped underload | GM underload VM placement | GM underload VM migration |
+GM overload | GM skipped overload | GM overload VM placement | GM overload VM migration |
+GM VM migration
+
