@@ -97,6 +97,19 @@ def build_local_host_path(local_data_directory):
 
 
 @contract
+def build_local_load_state_path(local_data_directory):
+    """ Build the path to the local load state file.
+
+    :param local_data_directory: The base local data path.
+     :type local_data_directory: str
+
+    :return: The path to the local host data file.
+     :rtype: str
+    """
+    return os.path.join(local_data_directory, 'load_state')
+
+
+@contract
 def physical_cpu_count(vir_connection):
     """ Get the number of physical CPUs using libvirt.
 
@@ -281,13 +294,14 @@ def execute_on_hosts(hosts, commands):
     """
     commands_merged = ''
     for command in commands:
-        commands_merged += 'echo $ ' + command + ';'
-        commands_merged += command + ';'
+        commands_merged += command
 
     for host in hosts:
+        tmp = 'ssh ' + host + ' "' + commands_merged + '" &'
         print 'Host: ' + host
+        print tmp
         print subprocess.Popen(
-            'ssh ' + host + ' "' + commands_merged + '"',
+            tmp,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=True).communicate()[0]

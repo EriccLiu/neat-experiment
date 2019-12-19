@@ -42,7 +42,7 @@ def random_factory(time_step, migration_time, params):
     :return: A function implementing the random VM selection algorithm.
      :rtype: function
     """
-    return lambda vms_cpu, vms_ram, state=None: ([random(vms_cpu)], {})
+    return lambda vms_cpu, vms_ram, physical_ram_total, state=None: ([random(vms_cpu)], {})
 
 
 @contract
@@ -61,7 +61,7 @@ def minimum_utilization_factory(time_step, migration_time, params):
     :return: A function implementing the minimum utilization VM selection.
      :rtype: function
     """
-    return lambda vms_cpu, vms_ram, state=None: \
+    return lambda vms_cpu, vms_ram, physical_cpu_utilization_total, state=None: \
         ([minimum_utilization(vms_cpu)], {})
 
 
@@ -81,7 +81,7 @@ def minimum_migration_time_factory(time_step, migration_time, params):
     :return: A function implementing the minimum migration time VM selection.
      :rtype: function
     """
-    return lambda vms_cpu, vms_ram, state=None: \
+    return lambda vms_cpu, vms_ram, physical_cpu_utilization_total, state=None: \
         ([minimum_migration_time(vms_ram)], {})
 
 
@@ -101,10 +101,34 @@ def minimum_migration_time_max_cpu_factory(time_step, migration_time, params):
     :return: A function implementing the minimum migration time / max CPU VM selection.
      :rtype: function
     """
-    return lambda vms_cpu, vms_ram, state=None: \
+    return lambda vms_cpu, vms_ram, physical_cpu_utilization_total, state=None: \
         ([minimum_migration_time_max_cpu(params['last_n'],
                                          vms_cpu,
                                          vms_ram)], {})
+
+
+@contract
+def minimum_migration_time_min_cpu_min_ram_factory(time_step, migration_time, params):
+    """ Creates the minimum migration time / minimum CPU usage / minimum RAM VM selection algorithm.
+
+    :param time_step: The length of the simulation time step in seconds.
+     :type time_step: int,>=0
+
+    :param migration_time: The VM migration time in time seconds.
+     :type migration_time: float,>=0
+
+    :param params: A dictionary containing the algorithm's parameters.
+     :type params: dict(str: *)
+
+    :return: A function implementing the minimum migration time / max CPU VM selection.
+     :rtype: function
+    """
+    return lambda vms_cpu, vms_ram, physical_cpu_utilization_total, state=None: \
+        ([minimum_migration_time_min_cpu_min_ram(params['last_n'],
+                                                 vms_cpu,
+                                                 vms_ram,
+                                                 physical_cpu_utilization_total,
+                                                 params['r'])], {})
 
 
 @contract
@@ -115,7 +139,7 @@ def minimum_migration_time(vms_ram):
      :type vms_ram: dict(str: number)
 
     :return: A VM to migrate from the host.
-     :rtype: str
+     :rtype: *
     """
     min_index, min_value = min(enumerate(vms_ram.values()),
                                key=operator.itemgetter(1))
@@ -130,7 +154,7 @@ def minimum_utilization(vms_cpu):
      :type vms_cpu: dict(str: list)
 
     :return: A VM to migrate from the host.
-     :rtype: str
+     :rtype: *
     """
     last_utilization = [x[-1] for x in vms_cpu.values()]
     min_index, min_value = min(enumerate(last_utilization),
@@ -146,7 +170,7 @@ def random(vms_cpu):
      :type vms_cpu: dict(str: list)
 
     :return: A VM to migrate from the host.
-     :rtype: str
+     :rtype: *
     """
     return choice(vms_cpu.keys())
 
@@ -165,7 +189,7 @@ def minimum_migration_time_max_cpu(last_n, vms_cpu, vms_ram):
      :type vms_ram: dict(str: number)
 
     :return: A VM to migrate from the host.
-     :rtype: str
+     :rtype: *
     """
     min_ram = min(vms_ram.values())
     max_cpu = 0
@@ -174,8 +198,45 @@ def minimum_migration_time_max_cpu(last_n, vms_cpu, vms_ram):
         if vms_ram[vm] > min_ram:
             continue
         vals = cpu[-last_n:]
+        if len(vals) == 0:
+            continue
         avg = float(sum(vals)) / len(vals)
         if max_cpu < avg:
             max_cpu = avg
             selected_vm = vm
+    return selected_vm
+
+@contract
+def minimum_migration_time_min_cpu_min_ram(last_n, vms_cpu, vms_ram, total_cpu, r):
+    """ Selects the VM with the minimum migration time, minimum CPU usage and minimum RAM.
+
+    :param last_n: The number of last CPU utilization values to average.
+     :type last_n: int,>0
+
+    :param vms_cpu: A map of VM UUID and their CPU utilization histories.
+     :type vms_cpu: dict(str: list)
+
+    :param vms_ram: A map of VM UUID and their RAM usage data.
+     :type vms_ram: dict(str: number)
+
+    :return: A VM to migrate from the host.
+     :rtype: *
+    """
+    if not vms_ram:
+        return None
+    
+    selected_vm = None
+    hostNeedcpu = sum([x[-1] for x in vms_cpu.values()]) - r * total_cpu
+    if hostNeedcpu < 0:
+        return None
+
+    minMetric = float("inf")
+    for vm, cpu in vms_cpu.items():
+        metric = cpu * vms_ram[vm]
+        if metric < minMetric and cpu > hostNeedcpu:
+            minMetric = metric
+            selected_vm = vm
+    if selected_vm == None:
+        selected_vm, min_value = max(enumerate(vms_ram.values()),
+                                 key=operator.itemgetter(1))
     return selected_vm

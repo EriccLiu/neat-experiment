@@ -23,4 +23,4 @@ compute_hosts = common.parse_compute_hosts(config['compute_hosts'])
 
 common.execute_on_hosts(
     compute_hosts, 
-    ['service openstack-neat-data-collector start'])
+    ['python /root/openstack-neat/start-data-collector.py &'])

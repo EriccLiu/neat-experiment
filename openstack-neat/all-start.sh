@@ -1,9 +1,9 @@
 #!/bin/sh
 
-./compute-data-collector-start.py
-service openstack-neat-global-manager start
-service openstack-neat-db-cleaner start
+./compute-data-collector-start.sh
+python start-global-manager.py &
+python /neat/global/myClean.py &
 
 sleep 2
 
-./compute-local-manager-start.py
+./compute-local-manager-start.sh

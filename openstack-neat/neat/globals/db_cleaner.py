@@ -105,3 +105,8 @@ def today():
      :rtype: datetime
     """
     return datetime.datetime.today()
+
+"""
+if __name__=="__main__":
+    start()
+"""

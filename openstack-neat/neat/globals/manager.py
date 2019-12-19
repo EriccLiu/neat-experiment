@@ -71,10 +71,13 @@ from contracts import contract
 from neat.contracts_primitive import *
 from neat.contracts_extra import *
 
+import requests
+requests.adapters.DEFAULT_RETRIES = 10
+
 import bottle
 from hashlib import sha1
 import novaclient
-from novaclient.v2 import client
+from novaclient import client
 import time
 import subprocess
 
@@ -270,7 +273,8 @@ def init_state(config):
     """
     return {'previous_time': 0,
             'db': init_db(config['sql_connection']),
-            'nova': client.Client(config['os_admin_user'],
+            'nova': client.Client('2.1',
+				  config['os_admin_user'],
                                   config['os_admin_password'],
                                   config['os_admin_tenant_name'],
                                   config['os_auth_url'],
@@ -849,6 +853,7 @@ def switch_hosts_off(db, sleep_command, hosts):
     :param hosts: A list of hosts to switch off.
      :type hosts: list(str)
     """
+    command = "no sleep command"
     if sleep_command:
         for host in hosts:
             command = 'ssh {0} "{1}"'. \
@@ -858,6 +863,7 @@ def switch_hosts_off(db, sleep_command, hosts):
             subprocess.call(command, shell=True)
     if log.isEnabledFor(logging.INFO):
         log.info('Switched off hosts: %s', str(hosts))
+        log.info(command)
     db.insert_host_states(dict((x, 0) for x in hosts))
 
 
@@ -877,6 +883,7 @@ def switch_hosts_on(db, ether_wake_interface, host_macs, hosts):
     :param hosts: A list of hosts to switch on.
      :type hosts: list(str)
     """
+    command = "no reactive command"
     for host in hosts:
         if host not in host_macs:
             host_macs[host] = host_mac(host)
@@ -889,4 +896,5 @@ def switch_hosts_on(db, ether_wake_interface, host_macs, hosts):
         subprocess.call(command, shell=True)
     if log.isEnabledFor(logging.INFO):
         log.info('Switched on hosts: %s', str(hosts))
+        log.info(command)
     db.insert_host_states(dict((x, 1) for x in hosts))

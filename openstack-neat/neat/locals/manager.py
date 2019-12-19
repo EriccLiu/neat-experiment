@@ -105,6 +105,7 @@ from neat.contracts_primitive import *
 from neat.contracts_extra import *
 
 import requests
+requests.adapters.DEFAULT_RETRIES = 10
 from hashlib import sha1
 import time
 
@@ -114,7 +115,6 @@ from neat.db_utils import *
 
 import logging
 log = logging.getLogger(__name__)
-
 
 @contract
 def start():
@@ -161,10 +161,16 @@ def init_state(config):
     physical_cpu_mhz_total = int(
         common.physical_cpu_mhz_total(vir_connection) *
         float(config['host_cpu_usable_by_vms']))
+
+    physical_cpu_utilization_total = float(
+        common.physical_cpu_count(vir_connection) *
+        float(config['host_ram_usable_by_vms']))
+    
     return {'previous_time': 0.,
             'vir_connection': vir_connection,
             'db': init_db(config['sql_connection']),
             'physical_cpu_mhz_total': physical_cpu_mhz_total,
+            'physical_cpu_utilization_total': physical_cpu_utilization_total,
             'hostname': vir_connection.getHostname(),
             'hashed_username': sha1(config['os_admin_user']).hexdigest(),
             'hashed_password': sha1(config['os_admin_password']).hexdigest()}
@@ -225,10 +231,13 @@ def execute(config, state):
     host_path = common.build_local_host_path(config['local_data_directory'])
     host_cpu_mhz = get_local_host_data(host_path)
 
+    load_state_path = common.build_local_load_state_path(config['local_data_directory'])
+
     host_cpu_utilization = vm_mhz_to_percentage(
         vm_cpu_mhz.values(),
         host_cpu_mhz,
         state['physical_cpu_mhz_total'])
+
     if log.isEnabledFor(logging.DEBUG):
         log.debug('The total physical CPU Mhz: %s', str(state['physical_cpu_mhz_total']))
         log.debug('VM CPU MHz: %s', str(vm_cpu_mhz))
@@ -293,6 +302,15 @@ def execute(config, state):
     if log.isEnabledFor(logging.INFO):
         log.info('Completed overload detection')
 
+    # save decisions of overload and underload into file
+    with open(load_state_path, 'w') as f:
+        if overload:
+            f.write(str(1))
+        elif underload:
+            f.write(str(2))
+        else:
+            f.write(str(0))
+
     if underload:
         if log.isEnabledFor(logging.INFO):
             log.info('Underload detected')
@@ -303,7 +321,8 @@ def execute(config, state):
                               'password': state['hashed_password'],
                               'time': time.time(),
                               'host': state['hostname'],
-                              'reason': 0})
+                              'reason': 0,
+                              'Connection':'close'})
             if log.isEnabledFor(logging.INFO):
                 log.info('Received response: [%s] %s',
                          r.status_code, r.content)
@@ -317,8 +336,13 @@ def execute(config, state):
 
             log.info('Started VM selection')
             vm_uuids, state['vm_selection_state'] = vm_selection(
-                vm_cpu_mhz, vm_ram, state['vm_selection_state'])
+                vm_cpu_mhz, vm_ram, state['physical_cpu_utilization_total'], state['vm_selection_state'])
+
             log.info('Completed VM selection')
+
+            if vm_uuids == None:
+                log.debug('No vm has been selected')
+                return state
 
             if log.isEnabledFor(logging.INFO):
                 log.info('Selected VMs to migrate: %s', str(vm_uuids))
@@ -330,6 +354,7 @@ def execute(config, state):
                                   'time': time.time(),
                                   'host': state['hostname'],
                                   'reason': 1,
+                                  'Connection':'close',
                                   'vm_uuids': ','.join(vm_uuids)})
                 if log.isEnabledFor(logging.INFO):
                     log.info('Received response: [%s] %s',
@@ -414,7 +439,7 @@ def get_ram(vir_connection, vms):
     """
     vms_ram = {}
     for uuid in vms:
-        ram = get_max_ram(vir_connection, uuid)
+        ram = int(get_max_ram(vir_connection, uuid))
         if ram:
             vms_ram[uuid] = ram
 

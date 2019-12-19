@@ -603,6 +603,16 @@ def get_cpu_mhz(vir_connection, physical_core_mhz, previous_cpu_time,
                 log.debug('VM %s: using previous CPU MHz %d',
                           uuid, previous_cpu_mhz[uuid])
             cpu_mhz[uuid] = previous_cpu_mhz[uuid]
+        # take clock sychronization error into consideration
+        elif current_time < previous_time:
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug('VM %s: current_time < previous_time: ' +
+                          'previous time %d, ' +
+                          'current time %d',
+                          uuid, previous_time, current_time)
+                log.debug('VM %s: using previous CPU MHz %d',
+                          uuid, previous_cpu_mhz[uuid])
+            cpu_mhz[uuid] = previous_cpu_mhz[uuid]
         else:
             if log.isEnabledFor(logging.DEBUG):
                 log.debug('VM %s: previous CPU time %d, ' +

@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from novaclient.v2 import client
+#from novaclient.v2 import client
+from novaclient import client
 import neat.common as common
 import neat.globals.manager as manager
 from neat.config import *
@@ -28,7 +29,8 @@ def vm_hostname(vm):
 config = read_and_validate_config([DEFAILT_CONFIG_PATH, CONFIG_PATH],
                                   REQUIRED_FIELDS)
 db = manager.init_db(config['sql_connection'])
-nova = client.Client(config['os_admin_user'],
+nova = client.Client('2.1',
+		     config['os_admin_user'],
                      config['os_admin_password'],
                      config['os_admin_tenant_name'],
                      config['os_auth_url'],

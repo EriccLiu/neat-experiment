@@ -38,7 +38,7 @@ def poll():
     try:
         if is_distribution_enabled():
             command = 'python2 /home/ubuntu/cpu-load-generator/cpu-load-generator.py -n 1 300 ' + \
-                      '/home/ubuntu/spe-2012-experiments/{0}/{1}'.format(dir, files.pop())
+                      '/home/ubuntu/ccpe-for-instance/{0}/{1}'.format(dir, files.pop())
             logging.info('Returning: %s', command)
             return command
     except:
@@ -55,4 +55,4 @@ files = os.listdir(dir)
 
 logging.info('Starting listening on localhost:8081')
 bottle.debug(True)
-bottle.run(host='controller', port=8081)
+bottle.run(host='192.168.1.180', port=8081)

@@ -20,11 +20,17 @@ import os
 import subprocess
 import time
 
+import logging
+logging.basicConfig(
+    filename='/home/ubuntu/ccpe-for-instance/cpu-generator.log',
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.DEBUG)
 
 def process(interval, utilization_list, ncpus):
     ncpus_str = str(ncpus)
     for utilization in utilization_list:
         utilization_str = str(utilization)
+        logging.info("\nSwitching to " + utilization_str + "%")
         print "\nSwitching to " + utilization_str + "%"
         p = subprocess.Popen(['lookbusy',
                               '--ncpus', ncpus_str,
