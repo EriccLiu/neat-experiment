@@ -19,6 +19,6 @@ scp compute$i:/var/log/neat/* compute$i
 done
 
 cd /root/ccpe-2014-experiments/results
-./db-dump
+./db-dump.sh
 cp -b db.sql /root/$1
 cp -b db.tar.gz /root/$1

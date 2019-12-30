@@ -85,6 +85,8 @@ import neat.common as common
 from neat.config import *
 from neat.db_utils import *
 
+import copy
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -315,6 +317,8 @@ def execute_underload(config, state, host):
     log.info('Started processing an underload request')
     underloaded_host = host
     hosts_cpu_total, _, hosts_ram_total = state['db'].select_host_characteristics()
+    all_hosts_cpu_total = copy.deepcopy(hosts_cpu_total)
+    all_hosts_ram_total = copy.deepcopy(hosts_ram_total)
 
     hosts_to_vms = vms_by_hosts(state['nova'], state['compute_hosts'])
     vms_last_cpu = state['db'].select_last_cpu_mhz_for_vms()
@@ -417,8 +421,8 @@ def execute_underload(config, state, host):
 
     log.info('Started underload VM placement')
     placement, vm_placement_state = vm_placement(
-        hosts_cpu_usage, hosts_cpu_total,
-        hosts_ram_usage, hosts_ram_total,
+        hosts_cpu_usage, all_hosts_cpu_total,
+        hosts_ram_usage, all_hosts_ram_total,
         {}, {},
         vms_cpu, vms_ram,
         vm_placement_state)
@@ -489,6 +493,9 @@ def execute_overload(config, state, host, vm_uuids):
     log.info('Started processing an overload request')
     overloaded_host = host
     hosts_cpu_total, _, hosts_ram_total = state['db'].select_host_characteristics()
+    all_hosts_cpu_total = copy.deepcopy(hosts_cpu_total)
+    all_hosts_ram_total = copy.deepcopy(hosts_ram_total)
+
     hosts_to_vms = vms_by_hosts(state['nova'], state['compute_hosts'])
     vms_last_cpu = state['db'].select_last_cpu_mhz_for_vms()
     hosts_last_cpu = state['db'].select_last_cpu_mhz_for_hosts()
@@ -583,8 +590,8 @@ def execute_overload(config, state, host, vm_uuids):
 
     log.info('Started overload VM placement')
     placement, vm_placement_state = vm_placement(
-        hosts_cpu_usage, hosts_cpu_total,
-        hosts_ram_usage, hosts_ram_total,
+        hosts_cpu_usage, all_hosts_cpu_total,
+        hosts_ram_usage, all_hosts_ram_total,
         inactive_hosts_cpu, inactive_hosts_ram,
         vms_cpu, vms_ram,
         vm_placement_state)

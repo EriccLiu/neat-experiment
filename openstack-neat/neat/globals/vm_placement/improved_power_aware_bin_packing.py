@@ -47,6 +47,8 @@ def improved_power_aware_best_fit_decreasing_factory(time_step, migration_time, 
             inactive_hosts_ram,
             hosts_cpu_usage,
             hosts_cpu_total,
+            hosts_ram_usage,
+            hosts_ram_total,
             vms_cpu,
             vms_ram,
             params['getPower'],
@@ -77,7 +79,9 @@ def get_available_resources(threshold, usage, total):
 @contract
 def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram,
                         inactive_hosts_cpu, inactive_hosts_ram, 
-                        hosts_cpu_usage, hosts_cpu_total,vms_cpu, vms_ram, 
+                        hosts_cpu_usage, hosts_cpu_total,
+                        hosts_ram_usage, hosts_ram_total,
+                        vms_cpu, vms_ram, 
                         getPowerParam, load_state_path):
     """ The Best Fit Decreasing (BFD) heuristic for placing VMs on hosts.
 
@@ -110,6 +114,10 @@ def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram
         log.debug('last_n_vm_cpu: %s', str(last_n_vm_cpu))
         log.debug('hosts_cpu: %s', str(hosts_cpu))
         log.debug('hosts_ram: %s', str(hosts_ram))
+        log.debug('hosts_cpu_usage: %s', str(hosts_cpu_usage))
+        log.debug('hosts_ram_usage: %s', str(hosts_ram_usage))
+        log.debug('hosts_cpu_total: %s', str(hosts_cpu_total))
+        log.debug('hosts_ram_total: %s', str(hosts_ram_total))
         log.debug('inactive_hosts_cpu: %s', str(inactive_hosts_cpu))
         log.debug('inactive_hosts_ram: %s', str(inactive_hosts_ram))
         log.debug('vms_cpu: %s', str(vms_cpu))
@@ -164,9 +172,10 @@ def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram
                     hosts = sorted(hosts)
                     hosts_cpu[activated_host[2]] = activated_host[0]
                     hosts_ram[activated_host[2]] = activated_host[1]
+                    hosts_cpu_usage[activated_host[2]] = 0
+                    hosts_ram_usage[activated_host[2]] = 0
                 else:
                     break
-
     if len(vms) == len(mapping):
         return mapping
     return {}
