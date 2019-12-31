@@ -714,7 +714,7 @@ def vms_by_host(nova, host):
     :return: A list of VM UUIDs from the specified host.
      :rtype: list(str)
     """
-    return [str(vm.id) for vm in nova.servers.list()
+    return [str(vm.id) for vm in nova.servers.list(search_opts={'status':'ACRIVE'})
             if vm_hostname(vm) == host]
 
 
@@ -732,7 +732,7 @@ def vms_by_hosts(nova, hosts):
      :rtype: dict(str: list(str))
     """
     result = dict((host, []) for host in hosts)
-    for vm in nova.servers.list():
+    for vm in nova.servers.list(search_opts={'status':'ACRIVE'}):
         result[vm_hostname(vm)].append(str(vm.id))
     return result
 

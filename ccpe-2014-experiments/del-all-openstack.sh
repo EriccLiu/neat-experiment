@@ -6,6 +6,9 @@
 chmod -R 755 /root/openstack-neat
 chmod -R 755 /root/ccpe-2014-experiments
 
+rm -rf /usr/local/lib/python2.7/dist-packages/openstack_neat-0.1-py2.7.egg/neat/
+cp -rb /root/openstack-neat/neat/ /usr/local/lib/python2.7/dist-packages/openstack_neat-0.1-py2.7.egg/
+
 for i in 1 2 3 4
 do
 
