@@ -7,7 +7,9 @@ from neat.contracts_extra import *
 
 import neat.common as common
 
+import sys
 import paramiko
+import getPower as gp
 
 import logging
 log = logging.getLogger(__name__)
@@ -76,7 +78,7 @@ def get_available_resources(threshold, usage, total):
                 for host, resource in usage.items())
 
 
-@contract
+
 def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram,
                         inactive_hosts_cpu, inactive_hosts_ram, 
                         hosts_cpu_usage, hosts_cpu_total,
@@ -181,7 +183,7 @@ def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram
     return {}
 
 
-@contract
+
 def getPower(param, utilization):
     """ Get the host current power according to host type and cpu utilization.
 
@@ -200,15 +202,14 @@ def getPower(param, utilization):
         return sys.maxint
 
 
-@contract
-def read_remote_load_state(host, loat_state_path):
+def read_remote_load_state(host, load_state_path):
     """ Get previous load state from remote compute host.
 
     :param host: Compute hostname.
      :type host: str
 
-    :param loat_state_path: The path to load state record file.
-     :type loat_state_path: str
+    :param load_state_path: The path to load state record file.
+     :type load_state_path: str
 
     :return: The previous overload and underload states of remote compute host.
      :rtype: bool, bool
@@ -217,7 +218,7 @@ def read_remote_load_state(host, loat_state_path):
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(host, 22, username='root', password='root', timeout=20)
-        (stdin, stdout, stderr) = client.exec_command('tail -1 ' + loat_state_path)
+        (stdin, stdout, stderr) = client.exec_command('tail -1 ' + load_state_path)
         tmp = None
         for line in stdout.readlines():
             tmp = int(line.strip())

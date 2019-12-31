@@ -1,9 +1,11 @@
 """ roubust simple linear regression based algorithms.
 """
+import os
 
 from contracts import contract
 from neat.contracts_primitive import *
 from neat.contracts_extra import *
+from collections import deque
 
 import logging
 log = logging.getLogger(__name__)
@@ -32,10 +34,10 @@ def slr_factory(time_step, migration_time, params):
                                  utilization,
                                  params['path']+'host_prediction',
                                  params['path']+'host_x'),
-                             {})
+                                 {})
 
 
-@contract
+
 def simple_linear_regression(matric, threshold, n, utilization, prediction_path, x_path):
     """ The SLR based CPU utilization threshold algorithm.
 
@@ -60,8 +62,8 @@ def simple_linear_regression(matric, threshold, n, utilization, prediction_path,
     :return: The decision of the algorithm and updated state.
      :rtype: bool
     """
-    # 读取真实与预测的utilization
-    # 截取长度：n，不足用0补
+    # read actual and predicted utilization
+    # length: n, padding with 0
     predicted_utilization = []
     x_utilization = []
     if not os.access(prediction_path, os.F_OK):
@@ -81,12 +83,13 @@ def simple_linear_regression(matric, threshold, n, utilization, prediction_path,
                 x_utilization.append(float(line))
 
     actual_utilization = utilization[-n:]
+    predicted_utilization = (len(actual_utilization) - len(predicted_utilization)) * [0] + predicted_utilization
     x_current = x_utilization[-1] + 1
 
-    # 计算统计量
+    # calculate statistics
     xMean, actualMean, b0, b1 = calculateStatistics(x_utilization, actual_utilization)
 
-    # 计算误差error
+    # calculate error
     if matric == 'mse':
         error = mse(actual_utilization, predicted_utilization)
         prediction = b0 + b1 * x_current + error
@@ -110,7 +113,7 @@ def simple_linear_regression(matric, threshold, n, utilization, prediction_path,
     prediction = max(0, prediction)
     prediction = min(1, prediction)
 
-    # 记录预测值
+    # calculate prediction
     append_prediction_data_locally(prediction_path, prediction, n)
     append_x_locally(x_path, n)
 
@@ -137,7 +140,7 @@ def calculateStatistics(x_utilization, y_utilization):
     xMean = sum(x_utilization) / windowSize
     yMean = sum(y_utilization) / windowSize
 
-    # 计算b1
+    # calculate b1
     b1 = 0
     tmp = 0
     for i in range(windowSize):
@@ -148,7 +151,7 @@ def calculateStatistics(x_utilization, y_utilization):
         b1 = 0
     else:
         b1 /= tmp
-    # 计算b0
+    # calculate b0
     b0 = yMean - b1 * xMean
     
     return xMean, yMean, b0, b1
@@ -166,13 +169,14 @@ def mse(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
     if windowSize <= 2:
         return None
 
     for i in range(windowSize):
         error += (actual_utilization[i] - predicted_utilization[i]) ** 2
     error /= (windowSize - 2)
+    
     return error
 
 def rmse(actual_utilization, predicted_utilization):
@@ -204,7 +208,7 @@ def mae(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
 
     if windowSize <= 0:
         return None
@@ -227,7 +231,7 @@ def ewmae(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
         
     if windowSize == 3:
         error += 0.2 * abs(actual_utilization[-3] - predicted_utilization[-3])
@@ -267,15 +271,15 @@ def se(actual_utilization, x_utilization, predicted_utilization):
 
     tmp = 0
     x_mean = 0
-    # 计算平均值
+    # calculate mean
     for i in range(windowSize):
         x_mean += x_utilization[i]
     x_mean /= windowSize
-    # 算分母
+    
     for i in range(windowSize):
         tmp += (x_utilization[i] - x_mean) ** 2
     tmp **= 0.5
-    # 算最终的se(b1)误差 
+    
     error /= tmp
     return error
 

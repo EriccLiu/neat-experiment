@@ -1,9 +1,11 @@
 """ roubust simple linear regression based algorithms.
 """
+import os
 
 from contracts import contract
 from neat.contracts_primitive import *
 from neat.contracts_extra import *
+from collections import deque
 
 import logging
 log = logging.getLogger(__name__)
@@ -32,10 +34,10 @@ def slr_factory(time_step, migration_time, params):
                                  utilization,
                                  params['path']+'host_prediction',
                                  params['path']+'host_x'),
-                             {})
+                                 {})
 
 
-@contract
+
 def simple_linear_regression(matric, threshold, n, utilization, prediction_path, x_path):
     """ The SLR based CPU utilization threshold algorithm.
 
@@ -61,6 +63,7 @@ def simple_linear_regression(matric, threshold, n, utilization, prediction_path,
      :rtype: bool
     """
     # read actual and predicted CPU utilization
+    # length: n, padding with 0
     predicted_utilization = []
     x_utilization = []
     if not os.access(prediction_path, os.F_OK):
@@ -80,6 +83,7 @@ def simple_linear_regression(matric, threshold, n, utilization, prediction_path,
                 x_utilization.append(float(line))
 
     actual_utilization = utilization[-n:]
+    predicted_utilization = (len(actual_utilization) - len(predicted_utilization)) * [0] + predicted_utilization
     x_current = x_utilization[-1] + 1
 
     # calculate some statistics
@@ -165,7 +169,7 @@ def mse(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
     if windowSize <= 2:
         return None
 
@@ -203,7 +207,7 @@ def mae(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
 
     if windowSize <= 0:
         return None
@@ -226,7 +230,7 @@ def ewmae(actual_utilization, predicted_utilization):
      :rtype: float
     """
     error = 0
-    windowSize = len(actual_utilization)
+    windowSize = min(len(actual_utilization), len(predicted_utilization))
         
     if windowSize == 3:
         error += 0.2 * abs(actual_utilization[-3] - predicted_utilization[-3])

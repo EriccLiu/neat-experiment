@@ -1,3 +1,6 @@
-host = "compute1"
-power = 12.43
-print("host(%s) power: %s", (str(host), str(power)))
+x = [1,2,3]
+
+leng = 10
+
+x = [0] * (leng - len(x)) + x
+print x

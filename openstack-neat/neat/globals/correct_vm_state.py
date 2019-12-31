@@ -57,7 +57,7 @@ def start():
         config['log_directory'],
         'vm-state-corrector.log',
         int(config['log_level']))
-    interval = config['local_manager_interval'] / 5
+    interval = int(config['local_manager_interval']) / 5
     
     if log.isEnabledFor(logging.INFO):
         log.info('Starting the vm state corrector, ' +
@@ -83,7 +83,7 @@ def init_state(config):
      :rtype: dict
     """
 
-    engine = create_engine(config['nova_sql_connection'])  # 'sqlite:///:memory:'
+    engine = create_engine("mysql://nova:stack@controller/nova")  # 'sqlite:///:memory:'
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -119,9 +119,12 @@ def execute(config, state):
     session = state['session']
 
     all_vms = nova.servers.list()
-    active_vms = nova.servers.list(search_opts={'status':'ACRIVE'})
+    active_vms = nova.servers.list(search_opts={'status':'ACTIVE'})
     migrating_vms = nova.servers.list(search_opts={'status':'MIGRATING'})
-    unexpected_vms = set(all_vms) - set(active_vms) - set(migrating_vms)
+    unexpected_vms = [ i for i in all_vms if (i not in active_vms) and (i not in migrating_vms)]
+
+    if log.isEnabledFor(logging.INFO):
+            log.info("Unexpected instances: %s", unexpected_vms)
 
     for vm in unexpected_vms:
         sql = "update instances set vm_state = 'active' where uuid = '" + str(vm.id) + "'"
@@ -136,3 +139,5 @@ def execute(config, state):
 
     return state
 
+if __name__ == "__main__":
+    start()

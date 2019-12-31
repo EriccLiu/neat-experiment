@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import neat.globals.correct-vm-state as corrector
+import neat.globals.correct_vm_state as corrector
 
+print "in start-vm-corrector"
 
 corrector.start()
