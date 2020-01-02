@@ -77,7 +77,7 @@ def markov(threshold, utilization, limit, order):
         Tu = 1 - 1.5 * iqr(utilization)
         Tl = 0.25 * Tu
     
-    X = utilization[-order]
+    X = utilization[-order:]
     Y = []
     # 0-underload, 1-normal, 2-overload
     for i in range(order):
