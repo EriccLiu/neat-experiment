@@ -31,6 +31,7 @@ from sqlalchemy.orm import sessionmaker
 
 import novaclient
 from novaclient import client
+#from novaclient.v2 import client
 import time
 
 import neat.common as common
@@ -120,14 +121,28 @@ def execute(config, state):
 
     all_vms = nova.servers.list()
     active_vms = nova.servers.list(search_opts={'status':'ACTIVE'})
+    #active_vms = nova.servers.list()
     migrating_vms = nova.servers.list(search_opts={'status':'MIGRATING'})
     unexpected_vms = [ i for i in all_vms if (i not in active_vms) and (i not in migrating_vms)]
+    #unexpected_vms = [ i for i in all_vms if (i in active_vms)]
+
+    # PS: power state
+    PS_unexpected_vms = nova.servers.list(search_opts={'power_state': 0})
 
     if log.isEnabledFor(logging.INFO):
-            log.info("Unexpected instances: %s", unexpected_vms)
+            log.info("State unexpected instances: %s", unexpected_vms)
+            log.info("Power state unexpected instances: %s", PS_unexpected_vms)
 
     for vm in unexpected_vms:
-        sql = "update instances set vm_state = 'active' where uuid = '" + str(vm.id) + "'"
+        sql = "update instances set vm_state = 'active', task_state = NULL where uuid = '" + str(vm.id) + "'"
+        if log.isEnabledFor(logging.INFO):
+            log.info(sql)
+        
+        session.execute(sql)
+        session.commit()
+
+    for vm in PS_unexpected_vms:
+        sql = "update instances set power_state = 1 where uuid = '" + str(vm.id) + "'"
         if log.isEnabledFor(logging.INFO):
             log.info(sql)
         

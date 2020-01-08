@@ -146,12 +146,19 @@ def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram
         while not mapped:
             for _, _, host in hosts:
                 # read load state from remote host
+                # chose_host indicates states of other hosts
+                # 0 - existing non-overload and non-underload hosts
+                # 1 - all hosts are overload or underload, and existing undeload hosts
+                # 2 - all hosts are overload
+                chose_host = 2
                 overload, underload = read_remote_load_state(host, load_state_path)
                 if overload:
                     continue
                 elif underload:
+                    chose_host = 1
                     continue
                 
+                chose_host = 0
                 # decide whether the host could hold the vm
                 if hosts_cpu[host] >= vm_cpu and \
                     hosts_ram[host] >= vm_ram:
@@ -162,6 +169,17 @@ def improved_power_aware_best_fit_decreasing(last_n_vm_cpu, hosts_cpu, hosts_ram
                             min = power
                             mapped = True
             else:
+                if chose_host != 0:
+                    for _, _, host in hosts:
+                        # decide whether the host could hold the vm
+                        if hosts_cpu[host] >= vm_cpu and \
+                            hosts_ram[host] >= vm_ram:
+                                power = getPower(getPowerParam, float(hosts_cpu_usage[host]) / hosts_cpu_total[host])
+                                log.debug("host("+str(host)+") power: " + str(power))
+                                if power < min:
+                                    mapping[vm_uuid] = host
+                                    min = power
+                                    mapped = True
                 if mapped:
                     hosts_cpu[host] -= vm_cpu
                     hosts_ram[host] -= vm_ram

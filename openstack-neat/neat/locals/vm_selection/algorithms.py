@@ -226,7 +226,13 @@ def minimum_migration_time_min_cpu_min_ram(last_n, vms_cpu, vms_ram, total_cpu, 
         return None
     
     selected_vm = None
-    hostNeedcpu = sum([x[-1] for x in vms_cpu.values()]) - r * total_cpu
+
+    hostNeedcpu = 0
+    for x in vms_cpu.values():
+        if len(x) > 0:
+            hostNeedcpu += x[-1]
+
+    hostNeedcpu -= r * total_cpu
     if hostNeedcpu < 0:
         return None
 
@@ -237,6 +243,8 @@ def minimum_migration_time_min_cpu_min_ram(last_n, vms_cpu, vms_ram, total_cpu, 
             minMetric = metric
             selected_vm = vm
     if selected_vm == None:
-        selected_vm, min_value = max(enumerate(vms_ram.values()),
+        min_index, min_value = max(enumerate(vms_ram.values()),
                                  key=operator.itemgetter(1))
+    selected_vm = vms_cpu.keys()[min_index]
+    
     return selected_vm

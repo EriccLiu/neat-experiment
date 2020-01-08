@@ -24,6 +24,6 @@ echo $fullname
 #python2 times-per-host.py root $MYSQL_ROOT_PASSWORD "$from" "$to"
 python times-per-host.py neat stack "$from" "$to"
 
-./db-drop.sh
+#./db-drop.sh
 
 rm -rf tmp

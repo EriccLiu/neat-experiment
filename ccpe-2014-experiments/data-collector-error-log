@@ -1,0 +1,23 @@
+root@compute1:~# python openstack-neat/start-data-collector.py 
+Traceback (most recent call last):
+  File "openstack-neat/start-data-collector.py", line 18, in <module>
+    collector.start()
+  File "<decorator-gen-39>", line 2, in start
+  File "/usr/local/lib/python2.7/dist-packages/contracts/main.py", line 270, in contracts_checker
+    result = function_(*args, **kwargs)
+  File "/root/openstack-neat/neat/locals/collector.py", line 141, in start
+    int(interval))
+  File "<decorator-gen-25>", line 2, in start
+  File "/usr/local/lib/python2.7/dist-packages/contracts/main.py", line 270, in contracts_checker
+    result = function_(*args, **kwargs)
+  File "/root/openstack-neat/neat/common.py", line 63, in start
+    state = execute(config, state)
+  File "/root/openstack-neat/neat/locals/collector.py", line 272, in execute
+    added_vm_data)
+  File "<decorator-gen-54>", line 2, in get_cpu_mhz
+  File "/usr/local/lib/python2.7/dist-packages/contracts/main.py", line 270, in contracts_checker
+    result = function_(*args, **kwargs)
+  File "/root/openstack-neat/neat/locals/collector.py", line 614, in get_cpu_mhz
+    uuid, previous_cpu_mhz[uuid])
+KeyError: '27cf0b42-1dc7-46a0-8ff5-2f9959b913ec'
+
